@@ -1,0 +1,24 @@
+version: "3.3"
+services:
+  server:
+    build: ./server
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./server:/server_app
+    environment:
+      FLASK_APP: run.py
+      FLASK_ENV: development
+  wesite:
+    build: ./simple_website
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./simple_website:/usr/src/website_app
+  website-admin:
+    build: ./react-admin
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./react-admin:/usr/src/admin_app
+
