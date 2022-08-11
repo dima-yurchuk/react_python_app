@@ -1,5 +1,5 @@
 from .models import User
-from app import db
+from app import db, socketio
 from flask_restful import Resource, Api, fields, marshal_with, reqparse
 from app.api import api_restfull_bp
 from flask import jsonify, request, make_response
@@ -28,6 +28,8 @@ class UserItem(Resource):
             user = User(end_user_id=args['end_user_id'], web_page_url=args['web_page_url'])
             db.session.add(user)
             db.session.commit()
+            users = User.query.all()
+            socketio.send(hundleResult(users))
             return make_response(jsonify({'id': user.id, 'end_user_id':user.end_user_id, 'web_page_url':user.web_page_url}))
         except:
             db.session.rollback()
@@ -40,22 +42,22 @@ class UserItem(Resource):
         range = request.args.get('range', '[0,4]')
         range = range[1:-1].split(',')
         print(id)
-        if id is None:
-            user_all = User.query.all()[int(range[0]):int(range[1])+1]
-            response = make_response(jsonify(hundleResult(user_all)))
-            response.headers['X-Total-Count'] = '10'
-            response.headers.add('Access-Control-Expose-Headers', 'Content-Range')
-            response.headers.add('Content-Range', 'users : 0-9/'+str(User.query.count()))
-            return response
-        else:
-            user = User.query.filter_by(id=id).first()
-            response = make_response(jsonify({'id':user.id, 'end_user_id':user.end_user_id, 'web_page_url':user.web_page_url}))
-            response.headers['X-Total-Count'] = '10'
-            response.headers.add('Access-Control-Expose-Headers', 'Content-Range')
-            response.headers.add('Content-Range', 'users : 0-9/'+str(User.query.count()))
+#         if id is None:
+#             user_all = User.query.all()[int(range[0]):int(range[1])+1]
+#             response = make_response(jsonify(hundleResult(user_all)))
+#             response.headers['X-Total-Count'] = '10'
+#             response.headers.add('Access-Control-Expose-Headers', 'Content-Range')
+#             response.headers.add('Content-Range', 'users : 0-9/'+str(User.query.count()))
+#             return response
+#         else:
+        user = User.query.filter_by(id=id).first()
+        response = make_response(jsonify({'id':user.id, 'end_user_id':user.end_user_id, 'web_page_url':user.web_page_url}))
+        response.headers['X-Total-Count'] = '10'
+        response.headers.add('Access-Control-Expose-Headers', 'Content-Range')
+        response.headers.add('Content-Range', 'users : 0-9/'+str(User.query.count()))
 #             if not user:
 #                 return make_response(jsonify({'message': 'User not found!'}))
-            return response
+        return response
 
     # @marshal_with(resource_fields, envelope='resource')
     def delete(self, id):
@@ -65,6 +67,8 @@ class UserItem(Resource):
             return make_response(jsonify({'message': 'User not found!'}), 404)
         db.session.delete(user)
         db.session.commit()
+        users = User.query.all()
+        socketio.send(hundleResult(users))
         return  make_response(jsonify({'message': 'User has been deleted'}))
 
 #     # @marshal_with(resource_fields, envelope='resource')
@@ -78,6 +82,8 @@ class UserItem(Resource):
         user.web_page_url = args['web_page_url']
         try:
             db.session.commit()
+            users = User.query.all()
+            socketio.send(hundleResult(users))
             return make_response(jsonify({'id': user.id, 'end_user_id':user.end_user_id, 'web_page_url':user.web_page_url}))
         except:
             db.session.rollback()

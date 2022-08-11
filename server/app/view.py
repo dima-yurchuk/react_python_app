@@ -2,7 +2,9 @@ from flask import request, make_response, jsonify
 import json
 from flask import current_app as app
 from .api.models import User
-from app import db
+from app import db, socketio
+from .utils import hundleResult
+from flask_socketio import send, emit
 from .utils import hundleResult
 
 user_data = []
@@ -17,7 +19,30 @@ def save_user():
     try:
         db.session.add(user)
         db.session.commit()
-        return {'success':False}
+        users = User.query.all()
+        socketio.send(hundleResult(users))
+        return {'success':True}
     except:
         db.session.rollback()
         return {'success':False}
+
+
+@socketio.on('connect')
+def test_connect(auth):
+   users = User.query.all()
+   socketio.send(hundleResult(users))
+   print('Client connected')
+
+# @socketio.on('remote-call')
+# def remote_call():
+# #    a, b = data
+#    print('emmittt')
+#    users = User.query.all()
+#    socketio.emit('get-data', hundleResult(users))
+# #    callback(users)
+# #    socketio.send(hundleResult(users))
+
+
+@socketio.on('disconnect')
+def test_disconnect():
+    print('Client disconnected')
